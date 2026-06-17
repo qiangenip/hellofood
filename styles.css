@@ -1,0 +1,665 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --ink: #1C1C1E;
+  --bg: #F9F6F0;
+  --white: #FFFFFF;
+  --accent: #E07050;
+  --warm: #F5B042;
+  --muted: #8E8E93;
+  --paper: #FDFAF3;
+  --pixel: 4px;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cg transform='rotate(-30, 12, 15)' fill='%231C1C1E'%3E%3Crect x='9' y='0' width='2' height='9' rx='0.5'/%3E%3Crect x='14' y='0' width='2' height='9' rx='0.5'/%3E%3Cpath d='M6.5 9 Q6.5 14 10 17 L15 17 Q18.5 14 18.5 9 Z'/%3E%3Crect x='11' y='16' width='3' height='15' rx='1'/%3E%3C/g%3E%3C/svg%3E") 2 3, auto;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+}
+
+button, .btn, a, select, input[type="submit"] {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cg transform='rotate(-30, 12, 15)' fill='%23F5B042'%3E%3Crect x='9' y='0' width='2' height='9' rx='0.5'/%3E%3Crect x='14' y='0' width='2' height='9' rx='0.5'/%3E%3Cpath d='M6.5 9 Q6.5 14 10 17 L15 17 Q18.5 14 18.5 9 Z'/%3E%3Crect x='11' y='16' width='3' height='15' rx='1'/%3E%3C/g%3E%3C/svg%3E") 2 3, pointer;
+}
+
+.app {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 32px 24px 48px;
+}
+
+/* ── Marquee ── */
+
+.marquee {
+  background: var(--warm);
+  border: 3px solid var(--ink);
+  border-radius: 0;
+  padding: 8px 0;
+  margin-bottom: 24px;
+  overflow: hidden;
+  white-space: nowrap;
+  box-shadow: var(--pixel) var(--pixel) 0 rgba(0,0,0,0.08);
+}
+
+.marquee span {
+  display: inline-block;
+  padding-left: 100%;
+  animation: marquee 12s linear infinite;
+  font-family: "Press Start 2P", monospace;
+  font-size: 11px;
+  color: var(--ink);
+  image-rendering: pixelated;
+}
+
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
+/* ── Header ── */
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 4px solid var(--ink);
+}
+
+.header h1 {
+  margin: 0;
+  font-family: "Press Start 2P", monospace;
+  font-size: 32px;
+  font-weight: 400;
+  color: var(--white);
+  background: var(--ink);
+  display: inline-block;
+  padding: 14px 20px 10px;
+  line-height: 1.8;
+  letter-spacing: 0;
+  image-rendering: pixelated;
+  box-shadow: 8px 8px 0 var(--accent);
+  position: relative;
+}
+
+.blink-cursor::after {
+  content: "_";
+  color: var(--warm);
+  animation: blink 0.8s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
+
+.header p {
+  margin: 12px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* ── Buttons ── */
+
+.btn {
+  border: 3px solid var(--ink);
+  border-radius: 0;
+  padding: 12px 20px;
+  font-size: 13px;
+  font-family: "Press Start 2P", monospace;
+  font-weight: 400;
+  background: var(--white);
+  color: var(--ink);
+  text-transform: uppercase;
+  letter-spacing: 0;
+  box-shadow: var(--pixel) var(--pixel) 0 var(--ink);
+  transition: none;
+  image-rendering: pixelated;
+  position: relative;
+  top: 0;
+  left: 0;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--ink);
+  color: var(--white);
+  box-shadow: none;
+  transform: translate(4px, 4px);
+}
+
+.btn:active:not(:disabled) {
+  top: 4px;
+  left: 4px;
+}
+
+.btn.primary {
+  background: var(--accent);
+  color: var(--white);
+}
+
+.btn.primary:hover:not(:disabled) {
+  background: var(--ink);
+  color: var(--white);
+}
+
+.btn.secondary {
+  background: var(--warm);
+  color: var(--ink);
+}
+
+.btn.secondary:hover:not(:disabled) {
+  background: var(--ink);
+  color: var(--warm);
+}
+
+.btn.ghost {
+  background: var(--white);
+  color: var(--muted);
+  border-color: var(--muted);
+  box-shadow: none;
+}
+
+.btn.ghost:hover {
+  background: var(--ink);
+  color: var(--white);
+  border-color: var(--ink);
+  box-shadow: none;
+  transform: none;
+}
+
+.btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ── Content Grid ── */
+
+.content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+/* ── Panels ── */
+
+.panel {
+  background: var(--white);
+  border: 3px solid var(--ink);
+  border-radius: 0;
+  padding: 24px;
+  box-shadow: var(--pixel) var(--pixel) 0 0 rgba(0,0,0,0.08);
+  position: relative;
+}
+
+.panel::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 16px;
+  right: 16px;
+  height: 4px;
+  background: var(--warm);
+}
+
+.panel h2 {
+  margin: 0 0 18px;
+  font-family: "Press Start 2P", monospace;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--ink);
+  padding-bottom: 12px;
+  border-bottom: 2px dashed var(--ink);
+  letter-spacing: 0;
+  image-rendering: pixelated;
+}
+
+/* ── Filters ── */
+
+.filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  gap: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+select,
+input {
+  border: 3px solid var(--ink);
+  border-radius: 0;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  font-weight: 500;
+  background: var(--paper);
+  color: var(--ink);
+  transition: none;
+}
+
+select:focus,
+input:focus {
+  outline: none;
+  background: var(--white);
+  border-color: var(--accent);
+}
+
+/* ── Wheel ── */
+
+.wheel-wrap {
+  grid-row: span 2;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#wheelCanvas {
+  width: min(100%, 400px);
+  height: auto;
+  border-radius: 0;
+  border: 4px solid var(--ink);
+  background: var(--paper);
+  margin-bottom: 20px;
+  image-rendering: pixelated;
+  transition: box-shadow 0.3s step-end;
+}
+
+#wheelCanvas.spinning {
+  box-shadow: 0 0 28px rgba(245, 176, 66, 0.5), 0 0 60px rgba(224, 112, 80, 0.2);
+  border-color: var(--warm);
+}
+
+.wheel-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 8px 0;
+  flex-wrap: wrap;
+}
+
+/* ── Screen Shake ── */
+
+.shake {
+  animation: shake 0.4s ease-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%      { transform: translateX(-6px) rotate(-1deg); }
+  30%      { transform: translateX(6px) rotate(1deg); }
+  50%      { transform: translateX(-4px) rotate(-0.5eg); }
+  70%      { transform: translateX(3px); }
+  90%      { transform: translateX(-1px); }
+}
+
+/* ── Result Card ── */
+
+.result-card {
+  border: 3px solid var(--ink);
+  border-radius: 0;
+  padding: 20px;
+  background: var(--paper);
+  transition: none;
+}
+
+.result-card.empty {
+  color: var(--muted);
+  text-align: center;
+  padding: 28px 20px;
+  font-size: 14px;
+  border-style: dashed;
+}
+
+.result-card:not(.empty) {
+  border-color: var(--accent);
+  border-width: 4px;
+  background: var(--paper);
+  position: relative;
+}
+
+.result-card:not(.empty)::after {
+  content: "★ 今日推荐 ★";
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--accent);
+  color: var(--white);
+  font-family: "Press Start 2P", monospace;
+  font-size: 8px;
+  padding: 3px 16px;
+  white-space: nowrap;
+  image-rendering: pixelated;
+  border: 2px solid var(--ink);
+}
+
+.result-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.result-main h3 {
+  margin: 0;
+  font-family: "Press Start 2P", monospace;
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--accent);
+  line-height: 1.8;
+  image-rendering: pixelated;
+  min-height: 1.8em;
+}
+
+.chip {
+  display: inline-block;
+  padding: 3px 12px;
+  border: 2px solid var(--ink);
+  border-radius: 0;
+  font-size: 10px;
+  font-family: "Press Start 2P", monospace;
+  font-weight: 400;
+  background: var(--white);
+  color: var(--ink);
+  image-rendering: pixelated;
+}
+
+/* ── History — Receipt Style ── */
+
+.history-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0;
+  background: var(--paper);
+  border: 2px dashed var(--muted);
+  font-family: "Courier New", monospace;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.history-list::before {
+  content: "══════════════\A  🍜 今日点单记录 🍜\A══════════════";
+  white-space: pre;
+  text-align: center;
+  font-size: 11px;
+  color: var(--ink);
+  padding: 16px 16px 12px;
+  letter-spacing: 0;
+  display: block;
+  position: sticky;
+  top: 0;
+  background: var(--paper);
+  z-index: 1;
+}
+
+.history-list li {
+  border: none;
+  border-bottom: 1px dotted var(--muted);
+  border-radius: 0;
+  padding: 10px 16px;
+  font-size: 12px;
+  font-weight: 400;
+  background: transparent;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  letter-spacing: 0;
+  line-height: 1.6;
+}
+
+.history-list li:first-of-type {
+  border-bottom: 1px solid var(--ink);
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.history-list li:hover {
+  background: #FFF8F6;
+}
+
+.h-left {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.h-del {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid var(--muted);
+  border-radius: 0;
+  background: var(--white);
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin-left: 8px;
+  transition: none;
+}
+
+.h-del:hover {
+  background: var(--accent);
+  color: var(--white);
+  border-color: var(--accent);
+}
+
+/* ── Dialog ── */
+
+dialog {
+  border: 4px solid var(--ink);
+  border-radius: 0;
+  width: min(90vw, 720px);
+  padding: 0;
+  box-shadow: 8px 8px 0 rgba(0,0,0,0.12);
+}
+
+dialog::backdrop {
+  background: rgba(28, 28, 30, 0.35);
+}
+
+.dialog-content {
+  display: grid;
+  gap: 18px;
+  padding: 28px;
+}
+
+.dialog-content h3 {
+  margin: 0;
+  font-family: "Press Start 2P", monospace;
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--ink);
+  line-height: 1.6;
+  image-rendering: pixelated;
+}
+
+.dialog-content h4 {
+  margin: 0;
+  font-family: "Press Start 2P", monospace;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--ink);
+  image-rendering: pixelated;
+}
+
+.dialog-divider {
+  border-top: 2px dashed var(--ink);
+}
+
+.restaurant-list {
+  max-height: 260px;
+  overflow: auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.restaurant-item {
+  display: grid;
+  grid-template-rows: auto auto auto;
+  border: 2px solid var(--ink);
+  border-radius: 0;
+  padding: 12px;
+  gap: 6px;
+  background: var(--paper);
+}
+
+.restaurant-item:hover {
+  border-color: var(--accent);
+}
+
+.restaurant-item strong {
+  font-size: 14px;
+  color: var(--ink);
+  font-family: "Press Start 2P", monospace;
+  font-weight: 400;
+  image-rendering: pixelated;
+  font-size: 11px;
+}
+
+.restaurant-item .meta {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.restaurant-item .btn {
+  justify-self: start;
+  font-size: 8px;
+  padding: 6px 10px;
+}
+
+.add-form {
+  display: grid;
+  gap: 10px;
+}
+
+.add-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 8px;
+}
+
+/* ── Muted text ── */
+
+.muted {
+  color: var(--muted);
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+#candidateInfo {
+  margin-top: 14px;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 900px) {
+  .content {
+    grid-template-columns: 1fr;
+  }
+
+  .wheel-wrap {
+    grid-row: span 1;
+  }
+
+  .filters,
+  .add-row {
+    grid-template-columns: 1fr;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .header h1 {
+    font-size: 18px;
+    padding: 10px 14px 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .app {
+    padding: 20px 12px;
+  }
+
+  .header h1 {
+    font-size: 14px;
+  }
+
+  .wheel-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .panel {
+    padding: 16px;
+  }
+
+  .btn {
+    font-size: 10px;
+    padding: 10px 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0s !important;
+    transition: none !important;
+  }
+
+  .btn:hover:not(:disabled) {
+    transform: none;
+    box-shadow: var(--pixel) var(--pixel) 0 var(--ink);
+  }
+}
