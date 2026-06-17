@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>像素风 · 今天吃什么</title>
+  <link href="https://cdn.jsdelivr.net/npm/nes.css@2.3.0/css/nes.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=ZCOOL+QingKe+HuangYou&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #1a1a2e;
+      display: flex; justify-content: center; align-items: center;
+      min-height: 100vh;
+      font-family: 'Press Start 2P', 'ZCOOL QingKe HuangYou', cursive;
+      overflow: hidden;
+    }
+    .crt-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15) 0px, rgba(0,0,0,0.15) 1px, transparent 1px, transparent 3px);
+      pointer-events: none; z-index: 999;
+    }
+    .scanlines {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: radial-gradient(ellipse at center, rgba(0,0,0,0) 50%, rgba(0,0,0,0.5) 100%);
+      pointer-events: none; z-index: 998;
+    }
+    .main-container { display: flex; flex-direction: column; align-items: center; gap: 16px; position: relative; z-index: 1; }
+    .title-area { text-align: center; margin-bottom: 4px; }
+    .title-area h1 {
+      font-family: 'Press Start 2P', cursive; font-size: 18px;
+      color: #FFEC27; text-shadow: 3px 3px 0 #AB5236, -2px 0 0 #FF004D;
+      letter-spacing: 2px; margin-bottom: 8px;
+    }
+    .title-area p {
+      font-family: 'ZCOOL QingKe HuangYou', cursive; font-size: 14px; color: #C2C3C7;
+    }
+    .mode-tabs { display: flex; gap: 0; }
+    .mode-tabs button {
+      font-family: 'Press Start 2P', cursive; font-size: 9px; padding: 8px 16px;
+      border: 3px solid #5F574F; background: #1D2B53; color: #C2C3C7; cursor: pointer;
+    }
+    .mode-tabs button:first-child { border-right: 0; }
+    .mode-tabs button.active { background: #7E2553; color: #FFEC27; border-color: #FFEC27; box-shadow: inset 0 0 8px rgba(255,236,39,.3); }
+    .mode-tabs button:hover { color: #FFF1E8; }
+    .game-area {
+      position: relative; width: 820px; height: 520px;
+      border: 6px solid #5F574F; border-radius: 0;
+      box-shadow: inset 0 0 40px rgba(0,0,0,0.5), 0 0 0 3px #1D2B53, 0 0 0 8px #5F574F;
+      background: #000; overflow: hidden;
+    }
+    .game-area canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+    .webcam-preview {
+      position: absolute; bottom: 12px; right: 12px;
+      width: 160px; height: 120px;
+      border: 3px solid #5F574F; border-radius: 0;
+      box-shadow: 0 0 0 2px #1D2B53;
+      transform: scaleX(-1); z-index: 10;
+    }
+    .gesture-hint {
+      position: absolute; bottom: 16px; left: 16px;
+      background: rgba(29,43,83,0.85); padding: 10px 14px;
+      border: 3px solid #5F574F; z-index: 10;
+      font-family: 'Press Start 2P', cursive; font-size: 9px;
+      color: #C2C3C7; line-height: 1.8;
+    }
+    .gesture-hint span.active { color: #FFEC27; }
+    .gesture-hint span.detected { color: #00E436; animation: blink 0.5s steps(2) infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+    .result-overlay {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      display: flex; justify-content: center; align-items: center;
+      pointer-events: none; z-index: 20;
+    }
+    .result-dialog {
+      background: #1D2B53; border: 4px solid #FFEC27;
+      padding: 30px 40px; text-align: center;
+      box-shadow: 0 0 0 3px #AB5236, 0 0 40px rgba(255,236,39,0.4);
+      animation: popIn 0.3s steps(4);
+    }
+    @keyframes popIn {
+      0% { transform: scale(0); } 80% { transform: scale(1.1); } 100% { transform: scale(1); }
+    }
+    .result-dialog .food-name {
+      font-family: 'Press Start 2P', cursive; font-size: 22px;
+      color: #FFEC27; margin: 12px 0; text-shadow: 3px 3px 0 #AB5236;
+    }
+    .result-dialog .food-emoji { font-size: 64px; display: block; }
+    .result-dialog .hint-text {
+      font-family: 'ZCOOL QingKe HuangYou', cursive; font-size: 14px;
+      color: #C2C3C7; margin-top: 10px;
+    }
+    .hidden { display: none !important; }
+    .toast {
+      position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+      background: #FF004D; color: #FFF; padding: 12px 24px;
+      font-family: 'Press Start 2P', cursive; font-size: 11px;
+      border: 3px solid #7E2553; z-index: 1000;
+      animation: toastIn 0.3s steps(3), toastOut 0.3s steps(3) 2.5s forwards;
+    }
+    @keyframes toastIn { 0% { top: -60px; } 100% { top: 20px; } }
+    @keyframes toastOut { 0% { top: 20px; opacity: 1; } 100% { top: -60px; opacity: 0; } }
+  </style>
+</head>
+<body>
+  <div class="crt-overlay"></div>
+  <div class="scanlines"></div>
+
+  <div class="main-container">
+    <div class="title-area">
+      <h1>⚔️ 今 天 吃 什 么 ？</h1>
+      <p>手势控制 · 像素抽卡 · 命运选择</p>
+    </div>
+
+    <div class="mode-tabs">
+      <button id="tabCard" class="active">🃏 塔罗抽卡</button>
+      <button id="tabSlot">🎰 老虎机</button>
+    </div>
+
+    <div class="game-area nes-container is-dark" id="gameArea">
+      <canvas id="gameCanvas"></canvas>
+      <video id="webcamVideo" class="webcam-preview" autoplay playsinline></video>
+      <div class="gesture-hint" id="gestureHint">
+        🖐 张手: 洗牌<br>
+        👆 食指: 选择卡片<br>
+        ✊ 握拳: 翻牌确认
+      </div>
+      <div class="result-overlay hidden" id="resultOverlay">
+        <div class="result-dialog">
+          <span class="food-emoji" id="resultEmoji"></span>
+          <div class="food-name" id="resultName"></div>
+          <div class="hint-text" id="resultHint">🖐 张开手掌 再来一次</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.js" crossorigin="anonymous"></script>
+
+  <script>
+  // ─────────────────────────────────────
+  //  PIXEL ART FOOD WHEEL — GESTURE VERSION
+  // ─────────────────────────────────────
+
+  // ═══ PICO-8 PALETTE ═══
+  const PAL = {
+    black:   '#000000', darkBlue:'#1D2B53', purple:  '#7E2553',
+    green:   '#008751', brown:   '#AB5236', darkGray:'#5F574F',
+    ltGray:  '#C2C3C7', white:   '#FFF1E8', red:     '#FF004D',
+    orange:  '#FFA300', yellow:  '#FFEC27', lime:    '#00E436',
+    blue:    '#29ADFF', indigo:  '#83769C', pink:    '#FF77A8',
+    peach:   '#FFCCAA',
+  };
+
+  // ═══ FOOD DATA ═══
+  const FOODS = [
+    { name: '兰州拉面', price: 18, emoji: '🍜', color: PAL.orange, icon: 'noodle' },
+    { name: '麻辣烫',   price: 23, emoji: '🥘', color: PAL.red,    icon: 'hotpot' },
+    { name: '黄焖鸡米饭', price: 20, emoji: '🍗', color: PAL.yellow, icon: 'rice' },
+    { name: '轻食沙拉', price: 29, emoji: '🥗', color: PAL.green,  icon: 'salad' },
+    { name: '番茄牛腩面', price: 26, emoji: '🍅', color: PAL.peach, icon: 'soup' },
+    { name: '煲仔饭',   price: 22, emoji: '🍚', color: PAL.brown,  icon: 'claypot' },
+    { name: '小炒盖饭', price: 17, emoji: '🍛', color: PAL.orange, icon: 'stirfry' },
+    { name: '日式豚骨拉面', price: 35, emoji: '🍜', color: PAL.peach, icon: 'ramen' },
+  ];
+
+  // ═══ DOM REFS ═══
+  const gameArea  = document.getElementById('gameArea');
+  const canvas    = document.getElementById('gameCanvas');
+  const ctx       = canvas.getContext('2d');
+  const video     = document.getElementById('webcamVideo');
+  const hintEl    = document.getElementById('gestureHint');
+  const resultOv  = document.getElementById('resultOverlay');
+  const resultEmj = document.getElementById('resultEmoji');
+  const resultNm  = document.getElementById('resultName');
+  const resultHt  = document.getElementById('resultHint');
+  const tabCard   = document.getElementById('tabCard');
+  const tabSlot   = document.getElementById('tabSlot');
+
+  // ═══ CANVAS SETUP ═══
+  const W = 820, H = 520;
+  canvas.width = W; canvas.height = H;
+  ctx.imageSmoothingEnabled = false;
+
+  // ═══ AUDIO (8-bit via Web Audio) ═══
+  let audioCtx = null;
+  function initAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  function playBeep(freq, dur, type='square', vol=0.08) {
+    if (!audioCtx) return;
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type; osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(t); osc.stop(t + dur);
+  }
+  function sfxShuffle() { for(let i=0;i<6;i++) setTimeout(()=>playBeep(200+Math.random()*600,0.06,'square',0.04),i*50); }
+  function sfxSelect()  { playBeep(800,0.08,'square',0.05); setTimeout(()=>playBeep(1200,0.06,'square',0.05),80); }
+  function sfxReveal()  {
+    playBeep(400,0.1,'square',0.06);
+    setTimeout(()=>playBeep(600,0.1,'square',0.06),100);
+    setTimeout(()=>playBeep(900,0.15,'triangle',0.07),200);
+    setTimeout(()=>playBeep(1200,0.2,'triangle',0.08),300);
+  }
+
+  // ═══ PARTICLE SYSTEM ═══
+  let particles = [];
+  function spawnParticles(x, y, count, colors) {
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 2 + Math.random() * 8;
+      particles.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 3,
+        life: 1, decay: 0.01 + Math.random() * 0.03,
+        size: 2 + Math.floor(Math.random() * 5),
+        color: colors[Math.floor(Math.random() * colors.length)],
+        rot: Math.random() * Math.PI * 2,
+        rotSpeed: (Math.random() - 0.5) * 0.3,
+      });
+    }
+  }
+  function updateParticles() {
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx; p.y += p.vy; p.vy += 0.12;
+      p.life -= p.decay; p.rot += p.rotSpeed;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+  }
+  function drawParticles(ctx) {
+    for (const p of particles) {
+      ctx.save(); ctx.globalAlpha = p.life;
+      ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // ═══ STARFIELD ═══
+  const stars = [];
+  for (let i = 0; i < 80; i++) {
+    stars.push({
+      x: Math.random() * W, y: Math.random() * H,
+      speed: 0.2 + Math.random() * 0.8,
+      size: Math.random() < 0.2 ? 2 : 1,
+      twinkle: Math.random() * Math.PI * 2,
+      twinkleSpeed: 0.01 + Math.random() * 0.04,
+    });
+  }
+  function drawStars(ctx, t) {
+    for (const s of stars) {
+      s.y += s.speed;
+      if (s.y > H) { s.y = -2; s.x = Math.random() * W; }
+      const alpha = 0.3 + Math.sin(t * s.twinkleSpeed + s.twinkle) * 0.3;
+      ctx.fillStyle = s.size === 2 ? PAL.white : PAL.ltGray;
+      ctx.globalAlpha = Math.max(0.1, alpha);
+      ctx.fillRect(Math.floor(s.x), Math.floor(s.y), s.size, s.size);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // ═══ CARD SYSTEM ═══
+  const CARD_W = 110, CARD_H = 150, CARD_GAP = 30;
+  const GRID_COLS = 3, GRID_ROWS = 2;
+  const GRID_START_X = (W - (CARD_W * GRID_COLS + CARD_GAP * (GRID_COLS - 1))) / 2;
+  const GRID_START_Y = 70;
+
+  // -- pixel card back (pre-rendered) --
+  const cardBackCanvas = document.createElement('canvas');
+  cardBackCanvas.width = CARD_W; cardBackCanvas.height = CARD_H;
+  const cbCtx = cardBackCanvas.getContext('2d');
+  cbCtx.imageSmoothingEnabled = false;
+  (function renderCardBack() {
+    cbCtx.fillStyle = PAL.darkBlue; cbCtx.fillRect(0,0,CARD_W,CARD_H);
+    cbCtx.fillStyle = PAL.ltGray;
+    for (let i=0;i<CARD_W;i+=4){ cbCtx.fillRect(i,0,2,2); cbCtx.fillRect(i,CARD_H-2,2,2); }
+    for (let i=0;i<CARD_H;i+=4){ cbCtx.fillRect(0,i,2,2); cbCtx.fillRect(CARD_W-2,i,2,2); }
+    cbCtx.fillStyle = PAL.purple; cbCtx.fillRect(4,4,CARD_W-8,CARD_H-8);
+    cbCtx.fillStyle = PAL.darkBlue;
+    for (let y=12;y<CARD_H-12;y+=10)
+      for (let x=12;x<CARD_W-12;x+=10){
+        cbCtx.fillRect(x,y,3,3); cbCtx.fillRect(x+1,y-1,1,1); cbCtx.fillRect(x-1,y+1,1,1);
+      }
+    cbCtx.fillStyle = PAL.yellow;
+    const cx=CARD_W/2, cy=CARD_H/2;
+    cbCtx.fillRect(cx-14,cy-18,28,6); cbCtx.fillRect(cx+4,cy-12,6,10);
+    cbCtx.fillRect(cx-6,cy-6,14,6); cbCtx.fillRect(cx-6,cy+2,6,8);
+    [[16,16],[CARD_W-20,16],[16,CARD_H-20],[CARD_W-20,CARD_H-20]].forEach(([sx,sy])=>{
+      cbCtx.fillStyle = PAL.yellow;
+      cbCtx.fillRect(sx,sy-4,2,10); cbCtx.fillRect(sx-4,sy,10,2); cbCtx.fillRect(sx-2,sy-2,6,6);
+    });
+  })();
+
+  // -- pixel food icons --
+  function drawFoodIcon(ctx, icon, x, y) {
+    ctx.fillStyle = PAL.white;
+    switch(icon) {
+      case 'noodle':
+        ctx.fillRect(x-16,y+2,32,14); ctx.fillStyle = PAL.orange; ctx.fillRect(x-14,y+4,28,2);
+        ctx.fillStyle = PAL.yellow; ctx.fillRect(x-12,y-4,4,8); ctx.fillRect(x-2,y-6,4,10); ctx.fillRect(x+8,y-4,4,8);
+        ctx.fillStyle = PAL.peach; ctx.fillRect(x-16,y+16,32,6); break;
+      case 'hotpot':
+        ctx.fillStyle = PAL.red; ctx.fillRect(x-14,y-2,28,14); ctx.fillStyle = PAL.brown; ctx.fillRect(x-14,y+12,28,4);
+        ctx.fillStyle = PAL.ltGray; ctx.fillRect(x-6,y-8,4,8); ctx.fillRect(x+2,y-10,4,10);
+        ctx.fillStyle = PAL.orange; ctx.fillRect(x-4,y+2,8,6); break;
+      case 'rice':
+        ctx.fillStyle = PAL.white; ctx.fillRect(x-14,y-2,28,16); ctx.fillStyle = PAL.peach; ctx.fillRect(x-14,y+14,28,4);
+        ctx.fillStyle = PAL.orange; ctx.fillRect(x-4,y-10,3,10); ctx.fillStyle = PAL.brown; ctx.fillRect(x-2,y-6,6,4); break;
+      case 'salad':
+        ctx.fillStyle = PAL.white; ctx.fillRect(x-14,y+2,28,12); ctx.fillStyle = PAL.green; ctx.fillRect(x-16,y-6,32,12);
+        ctx.fillStyle = PAL.lime; ctx.fillRect(x-12,y-8,8,6); ctx.fillRect(x+4,y-6,8,6);
+        ctx.fillStyle = PAL.red; ctx.fillRect(x-2,y,4,4); break;
+      case 'soup':
+        ctx.fillStyle = PAL.white; ctx.fillRect(x-16,y,32,14); ctx.fillStyle = PAL.peach; ctx.fillRect(x-16,y+14,32,4);
+        ctx.fillStyle = PAL.yellow; ctx.fillRect(x-14,y-6,4,10); ctx.fillRect(x-4,y-8,6,12); ctx.fillRect(x+6,y-4,4,8);
+        ctx.fillStyle = PAL.red; ctx.fillRect(x-8,y+2,16,3); break;
+      case 'claypot':
+        ctx.fillStyle = PAL.brown; ctx.fillRect(x-14,y-4,28,14); ctx.fillStyle = PAL.darkGray; ctx.fillRect(x-14,y+10,28,4);
+        ctx.fillStyle = PAL.white; ctx.fillRect(x-8,y-2,16,8);
+        ctx.fillStyle = PAL.green; ctx.fillRect(x-6,y-8,3,8); ctx.fillRect(x+3,y-6,3,8); break;
+      case 'stirfry':
+        ctx.fillStyle = PAL.white; ctx.fillRect(x-14,y+2,28,12); ctx.fillStyle = PAL.orange; ctx.fillRect(x-12,y+4,24,2);
+        ctx.fillStyle = PAL.green; ctx.fillRect(x-8,y-4,3,7); ctx.fillRect(x+2,y-6,3,9); ctx.fillRect(x-3,y-2,6,3);
+        ctx.fillStyle = PAL.red; ctx.fillRect(x-2,y-8,4,4); break;
+      case 'ramen':
+        ctx.fillStyle = PAL.white; ctx.fillRect(x-15,y+3,30,13); ctx.fillStyle = PAL.peach; ctx.fillRect(x-15,y+16,30,4);
+        ctx.fillStyle = PAL.yellow; ctx.fillRect(x-13,y-5,5,11); ctx.fillRect(x-4,y-7,4,13); ctx.fillRect(x+5,y-5,5,11);
+        ctx.fillStyle = PAL.green; ctx.fillRect(x-12,y+5,3,3); ctx.fillRect(x+9,y+5,3,3); break;
+    }
+  }
+
+  // -- card state --
+  let cards = [], shuffleTimer = 0, highlightCard = -1, flippingCard = -1;
+  let flipProgress = 0, revealedCard = -1, gameMode = 'idle';
+
+  function initCards() {
+    cards = FOODS.map((food, i) => ({
+      ...food, idx: i,
+      x: GRID_START_X + (i % GRID_COLS) * (CARD_W + CARD_GAP),
+      y: GRID_START_Y + Math.floor(i / GRID_COLS) * (CARD_H + CARD_GAP),
+      targetX: GRID_START_X + (i % GRID_COLS) * (CARD_W + CARD_GAP),
+      targetY: GRID_START_Y + Math.floor(i / GRID_COLS) * (CARD_H + CARD_GAP),
+      shakeX: 0, shakeY: 0, glowAlpha: 0,
+    }));
+  }
+
+  function shuffleCards() {
+    const positions = cards.map(c => ({ x: c.targetX, y: c.targetY }));
+    for (let i = positions.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [positions[i], positions[j]] = [positions[j], positions[i]];
+    }
+    cards.forEach((c, i) => { c.targetX = positions[i].x; c.targetY = positions[i].y; });
+    gameMode = 'shuffling'; shuffleTimer = 30;
+    sfxShuffle(); spawnParticles(W/2, H/2, 30, [PAL.yellow, PAL.blue, PAL.pink, PAL.lime]);
+  }
+
+  function drawCard(ctx, card) {
+    if (flippingCard === card.idx && gameMode === 'flipping') { drawFlippingCard(ctx, card); return; }
+    const x = card.x + card.shakeX, y = card.y + card.shakeY;
+    const highlight = highlightCard === card.idx;
+    if (card.glowAlpha > 0.01 || highlight) {
+      const ga = highlight ? 0.5 + Math.sin(Date.now() * 0.01) * 0.3 : card.glowAlpha;
+      ctx.shadowColor = card.color; ctx.shadowBlur = 16;
+    }
+    if (revealedCard === card.idx) drawCardFront(ctx, card, x, y);
+    else ctx.drawImage(cardBackCanvas, Math.round(x), Math.round(y));
+    ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
+    if (highlight) {
+      ctx.strokeStyle = PAL.yellow; ctx.lineWidth = 3;
+      ctx.strokeRect(Math.round(x)-2, Math.round(y)-2, CARD_W+4, CARD_H+4);
+    }
+  }
+
+  function drawCardFront(ctx, card, x, y) {
+    ctx.fillStyle = card.color; ctx.fillRect(Math.round(x), Math.round(y), CARD_W, CARD_H);
+    ctx.fillStyle = PAL.white;
+    for (let i=0;i<CARD_W;i+=4){ ctx.fillRect(Math.round(x)+i,Math.round(y),2,2); ctx.fillRect(Math.round(x)+i,Math.round(y)+CARD_H-2,2,2); }
+    for (let i=0;i<CARD_H;i+=4){ ctx.fillRect(Math.round(x),Math.round(y)+i,2,2); ctx.fillRect(Math.round(x)+CARD_W-2,Math.round(y)+i,2,2); }
+    drawFoodIcon(ctx, card.icon, Math.round(x)+CARD_W/2, Math.round(y)+CARD_H/2-8);
+    ctx.fillStyle = PAL.white; ctx.font = 'bold 14px "ZCOOL QingKe HuangYou", cursive'; ctx.textAlign = 'center';
+    ctx.fillText(card.name, Math.round(x)+CARD_W/2, Math.round(y)+CARD_H-20); ctx.textAlign = 'start';
+    ctx.fillStyle = PAL.black; ctx.fillRect(Math.round(x)+CARD_W-36, Math.round(y)-2, 38, 16);
+    ctx.fillStyle = PAL.yellow; ctx.font = '8px "Press Start 2P", cursive';
+    ctx.fillText('¥'+card.price, Math.round(x)+CARD_W-18, Math.round(y)+11);
+  }
+
+  function drawFlippingCard(ctx, card) {
+    const x = card.x, y = card.y, cx = x + CARD_W / 2;
+    const scaleX = Math.cos(flipProgress * Math.PI);
+    ctx.save(); ctx.translate(cx, y + CARD_H / 2); ctx.scale(scaleX, 1);
+    if (flipProgress < 0.5) { ctx.drawImage(cardBackCanvas, -CARD_W/2, -CARD_H/2); }
+    else {
+      const fc = document.createElement('canvas'); fc.width = CARD_W; fc.height = CARD_H;
+      const fctx = fc.getContext('2d'); fctx.imageSmoothingEnabled = false;
+      fctx.fillStyle = card.color; fctx.fillRect(0, 0, CARD_W, CARD_H);
+      fctx.fillStyle = PAL.white;
+      for (let i=0;i<CARD_W;i+=4){ fctx.fillRect(i,0,2,2); fctx.fillRect(i,CARD_H-2,2,2); }
+      for (let i=0;i<CARD_H;i+=4){ fctx.fillRect(0,i,2,2); fctx.fillRect(CARD_W-2,i,2,2); }
+      drawFoodIcon(fctx, card.icon, CARD_W/2, CARD_H/2-8);
+      fctx.fillStyle = PAL.white; fctx.font = 'bold 14px "ZCOOL QingKe HuangYou", cursive'; fctx.textAlign = 'center';
+      fctx.fillText(card.name, CARD_W/2, CARD_H-20); fctx.textAlign = 'start';
+      fctx.fillStyle = PAL.black; fctx.fillRect(CARD_W-36, 0, 36, 16);
+      fctx.fillStyle = PAL.yellow; fctx.font = '8px "Press Start 2P", cursive'; fctx.fillText('¥'+card.price, CARD_W-18, 12);
+      ctx.drawImage(fc, -CARD_W/2, -CARD_H/2);
+    }
+    ctx.restore();
+    if (Math.abs(scaleX) < 0.6) {
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      for (let ly = y; ly < y + CARD_H; ly += 6) ctx.fillRect(x, ly, CARD_W, 2);
+    }
+  }
+
+  // ═══ SLOT MACHINE ═══
+  const REEL_W = 120, REEL_H = 200, REEL_X = [30, 170, 310], REEL_Y = 40, CELL_H = 64;
+  const SLOT_FX = Math.round((W - 460) / 2), SLOT_FY = Math.round((H - 300) / 2);
+
+  // pre-render slot frame
+  const slotFrame = document.createElement('canvas'); slotFrame.width = 460; slotFrame.height = 300;
+  (function () {
+    const s = slotFrame.getContext('2d'); s.imageSmoothingEnabled = false;
+    s.fillStyle = PAL.dGray; s.fillRect(0, 0, 460, 300);
+    s.fillStyle = PAL.dBlue; s.fillRect(6, 6, 448, 288);
+    s.fillStyle = PAL.ltGray;
+    for (let i = 0; i < 460; i += 4) { s.fillRect(i, 0, 2, 2); s.fillRect(i, 298, 2, 2); }
+    for (let i = 0; i < 300; i += 4) { s.fillRect(0, i, 2, 2); s.fillRect(458, i, 2, 2); }
+    s.fillStyle = PAL.black;
+    s.fillRect(30, 40, 120, 200); s.fillRect(170, 40, 120, 200); s.fillRect(310, 40, 120, 200);
+    s.fillStyle = PAL.yellow;
+    for (let i = 0; i < 3; i++) { const rx = 30 + i * 140; s.fillRect(rx - 4, 40, 4, 200); s.fillRect(rx + 120, 40, 4, 200); }
+    s.fillStyle = PAL.red; s.fillRect(180, 10, 100, 20);
+    s.fillStyle = PAL.yellow; s.fillRect(190, 13, 80, 14);
+    s.fillStyle = PAL.white; s.font = '9px "Press Start 2P", cursive'; s.textAlign = 'center'; s.fillText('SLOT', 230, 24); s.textAlign = 'start';
+    s.fillStyle = PAL.green; s.fillRect(180, 270, 100, 20);
+  })();
+
+  let slotReels = [], slotStopping = [-1, -1, -1], slotResult = null;
+  let currentMode = 'card';
+
+  function initSlots() {
+    slotReels = [[], [], []]; slotStopping = [-1, -1, -1]; slotResult = null;
+    for (let r = 0; r < 3; r++) {
+      for (let i = 0; i < 12; i++) slotReels[r].push({ ...FOODS[Math.floor(Math.random() * FOODS.length)], offset: 0 });
+      slotReels[r].forEach((item, i) => { item.offset = i * CELL_H; });
+    }
+  }
+
+  function spinSlots() {
+    gameMode = 'spinning'; slotStopping = [-1, -1, -1]; slotResult = null;
+    slotReels.forEach((reel) => { reel._speed = 8 + Math.random() * 6; reel._stopping = false; });
+    sfxShuffle(); spawnParticles(W / 2, H / 2, 20, [PAL.yellow, PAL.pink, PAL.blue]);
+  }
+
+  function stopReel(r) {
+    if (slotStopping[r] >= 0 || slotReels[r]._stopping) return;
+    slotReels[r]._stopping = true; slotStopping[r] = r; sfxSelect();
+  }
+
+  function drawSlotReel(r, x, y) {
+    ctx.save(); ctx.beginPath(); ctx.rect(x, y, REEL_W, REEL_H); ctx.clip();
+    const reel = slotReels[r];
+    for (let i = 0; i < reel.length; i++) {
+      const item = reel[i], iy = y + item.offset;
+      if (iy > y - CELL_H && iy < y + REEL_H + CELL_H) {
+        ctx.fillStyle = '#112244'; ctx.fillRect(x, iy, REEL_W, CELL_H - 2);
+        ctx.fillStyle = PAL.ltGray;
+        for (let px = 0; px < REEL_W; px += 4) ctx.fillRect(x + px, iy + CELL_H - 4, 2, 2);
+        drawFoodIcon(ctx, item.icon, x + REEL_W / 2, iy + 24);
+        ctx.fillStyle = PAL.white; ctx.font = 'bold 11px "ZCOOL QingKe HuangYou", cursive';
+        ctx.textAlign = 'center'; ctx.fillText(item.name, x + REEL_W / 2, iy + CELL_H - 10); ctx.textAlign = 'start';
+      }
+    }
+    ctx.restore();
+  }
+
+  function switchMode(m) {
+    if (gameMode === 'flipping' || gameMode === 'revealed') hideResult();
+    currentMode = m; gameMode = 'idle'; highlightCard = -1; flippingCard = -1; revealedCard = -1; particles = [];
+    if (m === 'card') { initCards(); tabCard.classList.add('active'); tabSlot.classList.remove('active'); }
+    else { initSlots(); tabSlot.classList.add('active'); tabCard.classList.remove('active'); }
+    updateHintForMode();
+  }
+  tabCard.addEventListener('click', () => switchMode('card'));
+  tabSlot.addEventListener('click', () => switchMode('slot'));
+
+  // ═══ RENDER ═══
+  function drawModeTitle(ctx) {
+    ctx.fillStyle = PAL.darkGray; ctx.font = '10px "Press Start 2P", cursive'; ctx.textAlign = 'center';
+    ctx.fillText(currentMode === 'card' ? '🃏 塔 罗 抽 卡' : '🎰 老 虎 机', W / 2, 28); ctx.textAlign = 'start';
+  }
+  function drawGround(ctx) {
+    for (let i = 0; i < W; i += 4) {
+      ctx.fillStyle = (Math.floor(i/4) % 2 === 0) ? PAL.darkBlue : '#151d3d';
+      ctx.fillRect(i, H-4, 4, 4);
+    }
+  }
+
+  function render(timestamp) {
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = PAL.black; ctx.fillRect(0, 0, W, H);
+    drawStars(ctx, timestamp);
+    drawGround(ctx);
+    drawModeTitle(ctx);
+
+    // ── CARD MODE ──
+    if (currentMode === 'card') {
+      for (const c of cards) {
+        c.x += (c.targetX - c.x) * 0.2; c.y += (c.targetY - c.y) * 0.2;
+        if (c.shakeX !== 0) c.shakeX *= 0.8; if (c.shakeY !== 0) c.shakeY *= 0.8;
+        if (Math.abs(c.shakeX) < 0.1) c.shakeX = 0;
+        if (Math.abs(c.shakeY) < 0.1) c.shakeY = 0;
+        c.glowAlpha *= 0.9;
+      }
+
+      if (gameMode === 'shuffling') {
+        shuffleTimer--;
+        if (shuffleTimer <= 0) {
+          gameMode = 'selecting'; highlightCard = -1;
+          for (const c of cards) { c.shakeX = (Math.random() - 0.5) * 6; c.shakeY = (Math.random() - 0.5) * 6; }
+        }
+      }
+
+      if (gameMode === 'flipping') {
+        flipProgress += 0.04;
+        if (flipProgress >= 1) {
+          flipProgress = 1; gameMode = 'revealed'; revealedCard = flippingCard;
+          flippingCard = -1; highlightCard = -1;
+          const card = cards[revealedCard];
+          spawnParticles(card.x + CARD_W / 2, card.y + CARD_H / 2, 60, [card.color, PAL.yellow, PAL.white, PAL.lime, PAL.pink]);
+          sfxReveal(); showResult(card);
+        }
+      }
+
+      updateParticles();
+      for (const c of cards) drawCard(ctx, c);
+      drawParticles(ctx);
+
+      if (handX !== null && handY !== null && gameMode === 'selecting') {
+        const hx = handX * W, hy = handY * H;
+        ctx.fillStyle = PAL.lime; ctx.globalAlpha = 0.6 + Math.sin(timestamp * 0.005) * 0.3;
+        ctx.fillRect(Math.round(hx) - 6, Math.round(hy) - 6, 4, 4); ctx.fillRect(Math.round(hx) + 2, Math.round(hy) - 6, 4, 4);
+        ctx.fillRect(Math.round(hx) - 6, Math.round(hy) + 2, 4, 4); ctx.fillRect(Math.round(hx) + 2, Math.round(hy) + 2, 4, 4);
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // ── SLOT MODE ──
+    if (currentMode === 'slot') {
+      for (let r = 0; r < 3; r++) {
+        const reel = slotReels[r];
+        if (gameMode === 'spinning' && !reel._stopping) {
+          for (const item of reel) { item.offset += reel._speed; if (item.offset > CELL_H * 9) item.offset -= CELL_H * reel.length; }
+        }
+        if (reel._stopping) {
+          reel._speed *= 0.88;
+          for (const item of reel) { item.offset += reel._speed; if (item.offset > CELL_H * 9) item.offset -= CELL_H * reel.length; }
+          if (reel._speed < 0.3) {
+            reel._speed = 0; reel._stopping = false;
+            for (const item of reel) item.offset = Math.round(item.offset / CELL_H) * CELL_H;
+            if (slotStopping.filter(s => s >= 0).length >= 3) {
+              gameMode = 'revealed';
+              const mid = slotReels[1].find(it => Math.abs(it.offset - CELL_H) < CELL_H / 2);
+              slotResult = mid || slotReels[1][4];
+              spawnParticles(SLOT_FX + 230, SLOT_FY + 150, 50, [slotResult.color, PAL.yellow, PAL.white, PAL.lime]);
+              sfxReveal(); showResult(slotResult);
+            } else {
+              const nextStop = slotStopping.filter(s => s >= 0).length;
+              if (nextStop < 3) stopReel(nextStop);
+            }
+          }
+        }
+      }
+      ctx.drawImage(slotFrame, SLOT_FX, SLOT_FY);
+      for (let r = 0; r < 3; r++) drawSlotReel(r, SLOT_FX + REEL_X[r], SLOT_FY + REEL_Y);
+      if (gameMode === 'revealed' && slotResult && Math.sin(Date.now() * 0.008) > 0) {
+        ctx.fillStyle = 'rgba(255,236,39,0.08)'; ctx.fillRect(SLOT_FX + REEL_X[1], SLOT_FY + REEL_Y, REEL_W, REEL_H);
+      }
+      updateParticles(); drawParticles(ctx);
+    }
+
+    if (handLandmarks && handLandmarks.length > 0) drawHandSkeleton(ctx, handLandmarks[0]);
+
+    // camera status
+    ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(W - 200, 6, 194, 18);
+    ctx.fillStyle = PAL.ltGray; ctx.font = '7px "Press Start 2P", cursive';
+    ctx.fillText('📷 ' + (typeof camStatus !== 'undefined' ? camStatus : '加载中...'), W - 194, 18);
+
+    // idle hints
+    if (gameMode === 'idle') {
+      ctx.fillStyle = PAL.ltGray; ctx.font = '11px "ZCOOL QingKe HuangYou", cursive'; ctx.textAlign = 'center';
+      ctx.fillText(currentMode === 'card' ? '🖐 张开手掌开始洗牌' : '🖐 张开手掌启动老虎机', W / 2, H - 30); ctx.textAlign = 'start';
+    }
+
+    requestAnimationFrame(render);
+  }
+
+  function drawHandSkeleton(ctx, landmarks) {
+    const connections = [
+      [0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[0,9],[9,10],[10,11],[11,12],
+      [0,13],[13,14],[14,15],[15,16],[0,17],[17,18],[18,19],[19,20],[5,9],[9,13],[13,17],
+    ];
+    ctx.globalAlpha = 0.7;
+    for (const [i,j] of connections) {
+      const a = landmarks[i], b = landmarks[j];
+      ctx.strokeStyle = PAL.lime; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(Math.round(a.x*W), Math.round(a.y*H));
+      ctx.lineTo(Math.round(b.x*W), Math.round(b.y*H)); ctx.stroke();
+    }
+    for (const lm of landmarks) {
+      const lx = Math.round(lm.x * W), ly = Math.round(lm.y * H);
+      ctx.fillStyle = PAL.yellow; ctx.fillRect(lx-2, ly-2, 5, 5);
+      ctx.fillStyle = PAL.red; ctx.fillRect(lx-1, ly-1, 3, 3);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // ═══ RESULT OVERLAY ═══
+  function showResult(card) {
+    resultEmj.textContent = card.emoji; resultNm.textContent = card.name;
+    resultHt.textContent = '🖐 张开手掌 再来一次'; resultOv.classList.remove('hidden');
+  }
+  function hideResult() {
+    resultOv.classList.add('hidden'); revealedCard = -1; slotResult = null; gameMode = 'idle';
+    if (currentMode === 'card') initCards(); else initSlots();
+  }
+
+  // ═══ HAND TRACKING ═══
+  let handLandmarks = null, handX = null, handY = null;
+  let detectedGesture = 'none', gestureStableFrames = 0, lastGesture = 'none', gestureCooldown = 0;
+
+  function detectGesture(landmarks) {
+    const tips = [4, 8, 12, 16, 20], pips = [3, 6, 10, 14, 18];
+    let extended = 0; const fingers = [];
+    for (let i = 0; i < 5; i++) {
+      const tip = landmarks[tips[i]], pip = landmarks[pips[i]];
+      if (i === 0) fingers.push(Math.abs(tip.x - pip.x) > 0.04);
+      else fingers.push(tip.y < pip.y - 0.01);
+      if (fingers[i]) extended++;
+    }
+    if (fingers[1] && !fingers[2] && !fingers[3] && !fingers[4] && extended <= 2) return 'point';
+    if (extended <= 1) return 'fist';
+    if (extended >= 4) return 'open';
+    return 'none';
+  }
+
+  function onHandResults(results) {
+    if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+      handLandmarks = results.multiHandLandmarks;
+      const lm = results.multiHandLandmarks[0];
+      handX = 1 - lm[0].x; handY = lm[0].y;
+      const gesture = detectGesture(lm);
+      if (gesture === lastGesture) gestureStableFrames++;
+      else { gestureStableFrames = 0; lastGesture = gesture; }
+      if (gestureStableFrames >= 3 && gestureCooldown <= 0) {
+        detectedGesture = gesture; handleGesture(gesture);
+      }
+    } else {
+      handLandmarks = null; handX = null; handY = null;
+      detectedGesture = 'none'; gestureStableFrames = 0; lastGesture = 'none';
+    }
+  }
+
+  function handleGesture(gesture) {
+    if (gestureCooldown > 0) return;
+    switch (gesture) {
+      case 'open':
+        if (gameMode === 'revealed') { hideResult(); gestureCooldown = 10; }
+        else if (gameMode === 'idle' || gameMode === 'selecting') {
+          if (currentMode === 'card') { shuffleCards(); }
+          else { spinSlots(); }
+          gestureCooldown = 8;
+        }
+        break;
+      case 'point':
+        if (currentMode === 'card' && gameMode === 'selecting' && handX !== null && handY !== null) {
+          const px = handX * W, py = handY * H;
+          let closest = -1, closestDist = Infinity;
+          cards.forEach((c, i) => {
+            const cx = c.x + CARD_W / 2, cy = c.y + CARD_H / 2;
+            const dist = Math.hypot(px - cx, py - cy);
+            if (dist < closestDist) { closestDist = dist; closest = i; }
+          });
+          if (closestDist < 150) { if (highlightCard !== closest) sfxSelect(); highlightCard = closest; }
+          else highlightCard = -1;
+        }
+        break;
+      case 'fist':
+        if (currentMode === 'card' && gameMode === 'selecting' && highlightCard >= 0) {
+          flippingCard = highlightCard; flipProgress = 0; gameMode = 'flipping';
+          gestureCooldown = 28; initAudio();
+        } else if (currentMode === 'slot' && gameMode === 'spinning') {
+          const stopped = slotStopping.filter(s => s >= 0).length;
+          stopReel(stopped); gestureCooldown = 12; initAudio();
+        }
+        break;
+    }
+  }
+
+  // ═══ MEDIAPIPE SETUP ═══
+  var camStatus = '加载中...';
+  async function setupCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480, facingMode: 'user' } });
+      video.srcObject = stream; await video.play(); return true;
+    } catch(e) { console.warn('Camera not available:', e.message); return false; }
+  }
+
+  async function setupHandTracking() {
+    if (typeof Hands === 'undefined') { console.warn('MediaPipe Hands 未加载'); return; }
+    const hands = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/${file}` });
+    hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.6, minTrackingConfidence: 0.5 });
+    hands.onResults(onHandResults);
+    if (typeof Camera !== 'undefined' && video.srcObject) {
+      new Camera(video, { onFrame: async () => { await hands.send({ image: video }); }, width: 640, height: 480 }).start();
+    } else {
+      (function processFrame() { if (video.readyState >= 2) hands.send({ image: video }); requestAnimationFrame(processFrame); })();
+    }
+  }
+
+  function showToast(msg) {
+    const toast = document.createElement('div'); toast.className = 'toast'; toast.textContent = msg;
+    document.body.appendChild(toast); setTimeout(() => toast.remove(), 3000);
+  }
+
+  // ═══ MOUSE/KEYBOARD FALLBACK ═══
+  function setupMouseFallback() {
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect(), scaleX = W / rect.width, scaleY = H / rect.height;
+      handX = (e.clientX - rect.left) * scaleX / W; handY = (e.clientY - rect.top) * scaleY / H;
+      if (currentMode === 'card' && gameMode === 'selecting') {
+        const px = handX * W, py = handY * H; let closest = -1, closestDist = Infinity;
+        cards.forEach((c, i) => {
+          const cx = c.x + CARD_W/2, cy = c.y + CARD_H/2;
+          const dist = Math.hypot(px - cx, py - cy);
+          if (dist < closestDist) { closestDist = dist; closest = i; }
+        });
+        highlightCard = closestDist < 150 ? closest : -1;
+      }
+      handLandmarks = null;
+    });
+    canvas.addEventListener('mouseleave', () => { handX = null; handY = null; handLandmarks = null; highlightCard = -1; });
+    canvas.addEventListener('click', () => {
+      initAudio();
+      if (gameMode === 'revealed') { hideResult(); return; }
+      if (currentMode === 'card') {
+        if (gameMode === 'selecting' && highlightCard >= 0) {
+          flippingCard = highlightCard; flipProgress = 0; gameMode = 'flipping';
+        } else if (gameMode === 'idle' || gameMode === 'selecting') { shuffleCards(); }
+      } else {
+        if (gameMode === 'spinning') { const s = slotStopping.filter(x => x >= 0).length; stopReel(s); }
+        else if (gameMode === 'idle') { spinSlots(); }
+      }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault(); initAudio();
+        if (gameMode === 'revealed') { hideResult(); return; }
+        if (currentMode === 'card') {
+          if (gameMode === 'selecting' && highlightCard >= 0) {
+            flippingCard = highlightCard; flipProgress = 0; gameMode = 'flipping';
+          } else if (gameMode === 'idle' || gameMode === 'selecting') { shuffleCards(); }
+        } else {
+          if (gameMode === 'spinning') { const s = slotStopping.filter(x => x >= 0).length; stopReel(s); }
+          else if (gameMode === 'idle') { spinSlots(); }
+        }
+      }
+      if (e.key === '1') switchMode('card');
+      if (e.key === '2') switchMode('slot');
+    });
+  }
+
+  // ═══ HINT ═══
+  function updateHintForMode() {
+    const m = currentMode === 'card' ? '🃏 抽卡' : '🎰 老虎机';
+    if (gameMode === 'idle') hintEl.innerHTML = m + '<br>🖐 张手: 开始';
+    else if (gameMode === 'shuffling' || gameMode === 'spinning') hintEl.innerHTML = m + '<br>🎴 运行中...';
+    else if (gameMode === 'selecting') hintEl.innerHTML = m + '<br>👆 食指: 选择卡片<br>✊ 握拳: 翻牌确认';
+    else if (gameMode === 'flipping') hintEl.innerHTML = '✨ 翻牌中...';
+    else if (gameMode === 'revealed') hintEl.innerHTML = m + '<br>🖐 张手: 再来一次';
+  }
+  setInterval(updateHintForMode, 500);
+  setInterval(() => { if (gestureCooldown > 0) gestureCooldown--; }, 50);
+
+  // ═══ INIT ═══
+  let gameLoopStarted = false;
+  async function init() {
+    initCards(); initSlots(); setupMouseFallback();
+    if (!gameLoopStarted) { gameLoopStarted = true; requestAnimationFrame(render); }
+    const cameraOk = await setupCamera();
+    if (cameraOk) { camStatus = '摄像头已就绪'; await setupHandTracking(); showToast('📷 摄像头已就绪！挥挥手试试吧~'); }
+    else { camStatus = '无摄像头-鼠标模式'; showToast('⚠️ 未检测到摄像头，使用鼠标/触屏操作'); }
+    updateHintForMode();
+  }
+  init();
+  </script>
+</body>
+</html>

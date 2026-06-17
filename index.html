@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>今天吃什么 - 食物转盘</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <div class="marquee">
+        <span>不知道吃什么？让命运来决定！</span>
+      </div>
+      <header class="header">
+        <div>
+          <h1>今天吃什么</h1>
+          <p>3 秒决定，不再纠结</p>
+        </div>
+        <button id="openManageBtn" class="btn ghost">管理店铺</button>
+      </header>
+
+      <main class="content">
+        <section class="panel">
+          <h2>快速筛选</h2>
+          <div class="filters">
+            <label>
+              预算
+              <select id="budgetFilter">
+                <option value="all">不限</option>
+                <option value="low">￥15 以下</option>
+                <option value="mid">￥15–30</option>
+                <option value="high">￥30 以上</option>
+              </select>
+            </label>
+            <label>
+              距离
+              <select id="distanceFilter">
+                <option value="all">不限</option>
+                <option value="near">步行 10 分钟内</option>
+                <option value="mid">步行 10–20 分钟</option>
+                <option value="far">20 分钟以上</option>
+              </select>
+            </label>
+            <label>
+              口味
+              <select id="flavorFilter">
+                <option value="all">不限</option>
+                <option value="spicy">想吃辣</option>
+                <option value="light">想吃清淡</option>
+                <option value="soup">想喝汤</option>
+              </select>
+            </label>
+          </div>
+          <p id="candidateInfo" class="muted"></p>
+        </section>
+
+        <section class="wheel-wrap panel">
+          <h2>食物转盘</h2>
+          <canvas id="wheelCanvas" width="420" height="420"></canvas>
+          <div class="wheel-actions">
+            <button id="spinBtn" class="btn primary">开始转盘</button>
+          </div>
+          <p class="muted">每次转盘可重转 1 次，帮你快速决策但不被随机绑架。</p>
+        </section>
+
+        <section class="panel">
+          <h2>推荐结果</h2>
+          <div id="resultCard" class="result-card empty">
+            <p>还没有结果，点击"开始转盘"吧。</p>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>今日历史</h2>
+          <ul id="historyList" class="history-list"></ul>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="manageDialog">
+      <form method="dialog" class="dialog-content">
+        <h3>管理店铺</h3>
+        <div id="restaurantList" class="restaurant-list"></div>
+        <div class="dialog-divider"></div>
+        <h4>新增店铺</h4>
+        <div class="add-form">
+          <input id="newName" placeholder="店名" />
+          <div class="add-row">
+            <input id="newPrice" placeholder="人均 ￥" type="number" />
+            <input id="newWalk" placeholder="步行 分钟" type="number" />
+            <select id="newFlavor">
+              <option value="spicy">🌶️ 辣</option>
+              <option value="light">🥬 清淡</option>
+              <option value="soup">🍲 汤类</option>
+            </select>
+          </div>
+          <button id="addRestaurantBtn" class="btn secondary" type="button">新增</button>
+        </div>
+        <div class="dialog-actions">
+          <button class="btn primary" type="submit">完成</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
